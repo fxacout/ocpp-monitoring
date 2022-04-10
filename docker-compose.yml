@@ -1,0 +1,14 @@
+version: '3.9'
+services:
+  central_system:
+    build: ./centralSystem
+    ports:
+      - 9000:9000
+  charge_point:
+    build: ./chargePoint
+    depends_on:
+      - central_system
+  monitoring_system:
+    build: ./monitoringSystem
+    depends_on:
+      - charge_point
