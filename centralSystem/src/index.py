@@ -6,17 +6,30 @@ from datetime import datetime
 from ocpp.routing import on
 from ocpp.v201 import ChargePoint as cp
 from ocpp.v201 import call_result
+from ocpp.v201.enums import Action
 
 logging.basicConfig(level=logging.INFO)
 
 
 class ChargePoint(cp):
-    @on('BootNotification')
+    @on(Action.BootNotification)
     async def on_boot_notification(self, charging_station, reason, **kwargs):
+
+        print("Connected: {}".format(charging_station), flush=True)
+
         return call_result.BootNotificationPayload(
             current_time=datetime.utcnow().isoformat(),
             interval=10,
             status='Accepted'
+        )
+
+    @on('Heartbeat')
+    async def on_heartbeat(self,**kwargs):
+
+        print("Heartbeat received")
+
+        return call_result.HeartbeatPayload(
+            current_time=datetime.utcnow().isoformat()
         )
 
 

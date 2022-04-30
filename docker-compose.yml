@@ -7,8 +7,11 @@ services:
   charge_point:
     build: ./chargePoint
     depends_on:
-      - central_system
+      - monitoring_system
   monitoring_system:
-    build: ./monitoringSystem
+    image: mitmproxy/mitmproxy
+    command: mitmdump -p 9000 --mode reverse:central_system:9000
+    expose:
+      - 9000
     depends_on:
-      - charge_point
+      - central_system
