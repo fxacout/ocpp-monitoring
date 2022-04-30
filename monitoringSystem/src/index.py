@@ -1,16 +1,22 @@
-import nmap
+"""Process individual messages from a WebSocket connection."""
+import re
+from mitmproxy import ctx, http
 
-nma = nmap.PortScannerAsync()
 
-print('Monitoring started')
+def websocket_message(flow: http.HTTPFlow):
+    assert flow.websocket is not None  # make type checker happy
+    # get the latest message
+    message = flow.websocket.messages[-1]
 
-def callback_result(host, scan_result):
+    # was the message sent from the client or server?
+    if message.from_client:
+        ctx.log.info(f"Client sent a message: {message.content!r}")
+    else:
+        ctx.log.info(f"Server sent a message: {message.content!r}")
 
-    print('------------------')
+    # manipulate the message content
+    message.content = re.sub(rb'Heartbeat', b'Beatheart', message.content)
 
-    print(host, scan_result)
-
-nma.scan(hosts='172.18.0.0/24', arguments='-A', callback=callback_result)
-while nma.still_scanning():
-    print('.', end=' ', flush=True)
-    nma.wait(2)   # you can do whatever you want but I choose to wait after the end of the scan
+    if b'FOOBAR' in message.content:
+        # kill the message and not send it to the other endpoint
+        message.drop()

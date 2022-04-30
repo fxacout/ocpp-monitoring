@@ -10,7 +10,9 @@ services:
       - monitoring_system
   monitoring_system:
     image: mitmproxy/mitmproxy
-    command: mitmdump -p 9000 --mode reverse:central_system:9000
+    volumes:
+      - ./monitoringSystem/src:/var/python-scripts
+    command: mitmdump -p 9000 --mode reverse:central_system:9000 -s /var/python-scripts/index.py
     expose:
       - 9000
     depends_on:

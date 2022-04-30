@@ -1,11 +1,10 @@
 ## Investigar
 
-* OCPP tiene protocolos Ping?
-* Se puede implementar un endpoint para hacer ping?
-* Usar Scapy o similar para sacar trazas y saber con mas exactitud que es (necesidad de MITM)
+* Mejorar UI
+* Usar cola de eventos que recoge el servidor de monitorización externo
 
 ### Muy util
-* Sistema de monitorización como proxy inverso!!
+https://observablehq.com/@d3/force-directed-graph
 
 ### Conseguido:
-* Usar Nmap para saber el numero de elementos en la red (No sabemos si es un Punto de Carga o Sistema Central) (lento)
+* Sistema de monitorización como proxy inverso!!
