@@ -2,18 +2,32 @@ version: '3.9'
 services:
   central_system:
     build: ./centralSystem
-    ports:
-      - 9000:9000
-  charge_point:
-    build: ./chargePoint
-    depends_on:
-      - monitoring_system
+    expose:
+      - 9000
   monitoring_system:
-    image: mitmproxy/mitmproxy
-    volumes:
-      - ./monitoringSystem/src:/var/python-scripts
-    command: mitmdump -p 9000 --mode reverse:central_system:9000 -s /var/python-scripts/index.py
+    build: ./monitoringSystem
     expose:
       - 9000
     depends_on:
       - central_system
+  monitoring_log:
+    build: ./backend
+    expose:
+      - 3000
+    ports:
+      - "3000:3000"
+  mongodb:
+    image: mongo
+    restart: always
+    ports:
+      - 27017:27017
+  
+  charge_point_1:
+    build: ./chargePoint
+    depends_on:
+      - monitoring_system
+
+  charge_point_2:
+    build: ./chargePoint
+    depends_on:
+      - monitoring_system

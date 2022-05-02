@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import websockets
+from random import randrange
 
 from ocpp.v201 import call
 from ocpp.v201 import ChargePoint as cp
@@ -34,12 +35,14 @@ class ChargePoint(cp):
 
 
 async def main():
+    
+    chargePointId = randrange(1,10000)
     async with websockets.connect(
-        'ws://monitoring_system:9000/CP_1',
+        'ws://monitoring_system:9000/CP_{}'.format(chargePointId),
          subprotocols=['ocpp2.0.1']
     ) as ws:
 
-        cp = ChargePoint('CP_1', ws)
+        cp = ChargePoint('CP_{}'.format(chargePointId), ws)
 
         await asyncio.gather(cp.start(), cp.send_boot_notification(), cp.send_heartbeats())
 

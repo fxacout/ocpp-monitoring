@@ -1,15 +1,14 @@
 # syntax=docker/dockerfile:1
 
-FROM python:3.8-slim-buster
+FROM mitmproxy/mitmproxy:latest
 
 WORKDIR /app
-
-RUN apt-get update && apt-get install -y \
-    nmap
 
 COPY requirements.txt requirements.txt
 RUN pip3 install -r requirements.txt
 
 COPY . .
 
-CMD [ "python3", "src/index.py"]
+EXPOSE 9000
+
+ENTRYPOINT [ "mitmdump", "-p","9000", "--mode","reverse:central_system:9000", "-s","./src/index.py"]
