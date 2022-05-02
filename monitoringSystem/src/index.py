@@ -28,6 +28,9 @@ def get_request_type(message: bytes):
     
     return ''
 
+def get_duration_time(message_created: float) -> float:
+    return time() - message_created
+
 
 def websocket_message(flow: http.HTTPFlow):
     assert flow.websocket is not None  # make type checker happy
@@ -48,6 +51,8 @@ def websocket_message(flow: http.HTTPFlow):
             requests.post(baseUrlMonitoringLog.format('heartbeat'), headers=headers,json=payload)
     else:
         ctx.log.info(f"Server sent a message: {message.content!r}")
+        payload = {'id':get_chargePoint_id(flow.request.data.path),'duration': get_duration_time(message.timestamp)}
+        requests.post(baseUrlMonitoringLog.format('duration'), headers=headers,json=payload)
 
     # manipulate the message content
     # message.content = re.sub(rb'Heartbeat', b'Beatheart', message.content)

@@ -40,6 +40,16 @@ def charge_point_disconnect():
         'status_code' : 201
     }
 
+@app.route('/duration', methods=['POST'])
+def charge_point_duration():
+    chargePointId = request.json['id']
+    duration = request.json['duration']
+    id = mongo.db.chargePointLogs.insert_one(
+    {'id': chargePointId,'duration': duration, 'Type': 'TLS'})
+    return {
+        'status_code' : 201
+    }
+
 @app.errorhandler(404)
 def not_found(error=None):
     message = {
