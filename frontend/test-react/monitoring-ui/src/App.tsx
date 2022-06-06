@@ -1,26 +1,17 @@
 import React from 'react';
-import logo from './logo.svg';
 import './App.css';
 import {Graph} from './components/VisNetwork';
+import io from 'socket.io-client'
 
 function App() {
+
+  const socket = io('http://monitoring_log:3000/ws')
+
+
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-      <Graph options={{}}></Graph>
+      <Graph options={{}} socket={socket}></Graph>
+      <h1>Test</h1>
     </div>
   );
 }

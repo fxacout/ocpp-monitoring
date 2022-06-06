@@ -1,52 +1,89 @@
-import React, { useEffect, useRef } from 'react';
-import { Edge, Network, Node, Options } from 'vis-network';
+import React, { createRef } from 'react';
+import { Edge, Network, Node, Options } from 'vis-network/peer';
+import { DataSet } from 'vis-data/peer'
+import type { Socket } from 'socket.io-client';
+import { ChargePointConnected, ChargePointDisconnected, ChargePointLatency } from '../models/ChargePoint';
+
 
 export interface GraphProps {
     options: Options
+    socket: Socket
 }
 
 export interface GraphState {
-    nodes: Node[]
-    edges: Edge[]
+    nodes: DataSet<Node>
+    edges: DataSet<Edge>
+    heartbeat: boolean
 }
 
 export class Graph extends React.Component<GraphProps, GraphState> {
 
+    private container: any
+
+    private interval: NodeJS.Timer | undefined
+
     state = {
-        nodes: [{ id: 1, label: 'Central System' }],
-        edges: []
+        nodes: new DataSet([{ id: 1, label: 'Central System', color: '#76B947' }, { id: 2, label: 'Charge Point 1' }]),
+        edges: new DataSet(),
+        heartbeat: false
     } as GraphState
+    
+
+    constructor(props: GraphProps) {
+        super(props)
+        this.container = createRef<HTMLDivElement>()
+    }
 
     addChargePoint = (id: number, responseTime: number) => {
-        if (this.state.nodes.filter((node) => node.id === id).length > 0) {
-            throw Error('Node already exists')
-        }
         this.setState((state) => {
-            state.nodes.push({ id, label: `Charge Point ${id}` })
-            state.edges.push({ from: id, to: 1, label: this.responseTimeToString(responseTime) })
+            state.nodes.add({ id, label: `Charge Point ${id}` })
+            state.edges.add({ from: id, to: 1, label: this.responseTimeToString(responseTime) })
+            return state
         })
     }
 
-    deleteChargePoint = (id: number) => {
-        if (this.state.nodes.filter((node) => node.id === id).length === 0) {
-            throw Error('Node does not exist')
-        }
+    tick() {
+        this.state.nodes.map(node => this.colorHeartbeat(node))
+        this.setState({
+            heartbeat: !this.state.heartbeat,
+            nodes: this.state.nodes,
+            edges: this.state.edges
+        })
+    }
 
-        if (this.state.edges.filter((edge) => edge.from === id).length === 0) {
-            throw Error('Edge does not exist')
-        }
+    componentDidMount() {
+        this.container.current && new Network(this.container.current, { nodes: this.state.nodes, edges: this.state.edges }, this.props.options);
+        this.interval = setInterval(() => this.tick(), 1000);
+
+        // Set listeners from WebSocket
+
+        this.props.socket.on('cp_connect', (chargePointConnected: ChargePointConnected) => {
+            this.addChargePoint(Number(chargePointConnected.id), 0)
+        })
+
+        this.props.socket.on('cp_disconnect', (chargePointDisconnected: ChargePointDisconnected) => {
+            this.deleteChargePoint(Number(chargePointDisconnected.id))
+        })
+        
+        this.props.socket.on('cp_latency', (chargePointLatency: ChargePointLatency) => {
+            this.updateLatency(chargePointLatency)
+        })
+    }
+
+    componentWillUnmount() {
+        clearInterval(this.interval!);
+      }
+
+    deleteChargePoint = (id: number) => {
 
         this.setState((state) => {
-            let edge = state.edges.find((edge) => edge.from === id)!
-            edge.label = 'Disconnected'
-            edge.color = '#FF0000'
-
-            useEffect(() => {
-                const timer = setTimeout(() => {
-                    state.nodes.forEach( (node, index, array) => { if(node.id === id) array.splice(index,1); })
-                }, 2000);
-                return () => clearTimeout(timer);
-              }, []);
+            let edge = state.edges.forEach((edge) => {
+                if (edge.from === id) {
+                    state.edges.remove(id)
+                }
+            })
+            state.nodes.remove(id)
+            return state
         })
     }
 
@@ -54,35 +91,27 @@ export class Graph extends React.Component<GraphProps, GraphState> {
         return `Latency: ${responseTime}`
     }
 
-    private colorHeartbeat(node: Node): void {
-        node.color = '#76B947'
-        useEffect(() => {
-            const timer = setTimeout(() => {
-                node.color = '#B1D8B7'
-            }, 500);
-            return () => clearTimeout(timer);
-          }, []);
+    private updateLatency(chargePointLatency: ChargePointLatency) {
+        this.setState((prevState) => {
+            prevState.edges.forEach((edge) => {
+                if (edge.from === chargePointLatency.id) {
+                    prevState.edges.update({id: edge.id, label: this.responseTimeToString(chargePointLatency.latency)})
+                }
+            })
+        })
     }
 
-    chargePointHeartbeat = (id: number, responseTime: number) => {
-        if (this.state.nodes.filter((node) => node.id === id).length === 0) {
-            throw Error('Node does not exist')
-        }
-        this.setState((state) => {
-            let node = state.nodes.find((node) => node.id === id)!
-            this.colorHeartbeat(node)
-            node.label = this.responseTimeToString(responseTime)
+    private colorHeartbeat(node: Node): void {
+        const { id } = node
+        this.setState((prevState) => {
+            prevState.nodes.update({id, color: (this.state.heartbeat)? '#76B947' : '#B1D8B7'})
+            return prevState
         })
     }
 
     render(): React.ReactNode {
-        const container = useRef(null);
-        useEffect(() => {
-            container.current &&
-                new Network(container.current, { nodes: this.state.nodes, edges: this.state.edges }, this.props.options);
-        }, [container, this.state.nodes, this.state.edges]);
-
-        return <div ref={container} style={{ height: '500px', width: '800px' }} />;
+        console.log(JSON.stringify(this.state.nodes))
+        return <div ref={this.container} style={{ height: '500px', width: '800px' }} />;
     }
 
 }
