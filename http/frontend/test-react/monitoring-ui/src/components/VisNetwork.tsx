@@ -23,7 +23,7 @@ export class Graph extends React.Component<GraphProps, GraphState> {
     private interval: NodeJS.Timer | undefined
 
     state = {
-        nodes: new DataSet([{ id: 1, label: 'Central System', color: '#76B947' }, { id: 2, label: 'Charge Point 1' }]),
+        nodes: new DataSet([{ id: 1, label: 'Central System', color: '#76B947' }, { id: 2, label: 'Charge Point 1' }], {}),
         edges: new DataSet(),
         heartbeat: false
     } as GraphState
@@ -68,6 +68,7 @@ export class Graph extends React.Component<GraphProps, GraphState> {
         this.props.socket.on('cp_latency', (chargePointLatency: ChargePointLatency) => {
             this.updateLatency(chargePointLatency)
         })
+        this.props.socket.connect()
     }
 
     componentWillUnmount() {
@@ -92,12 +93,13 @@ export class Graph extends React.Component<GraphProps, GraphState> {
     }
 
     private updateLatency(chargePointLatency: ChargePointLatency) {
-        this.setState((prevState) => {
+        this.setState((prevState: GraphState): GraphState => {
             prevState.edges.forEach((edge) => {
                 if (edge.from === chargePointLatency.id) {
                     prevState.edges.update({id: edge.id, label: this.responseTimeToString(chargePointLatency.latency)})
                 }
             })
+            return prevState
         })
     }
 

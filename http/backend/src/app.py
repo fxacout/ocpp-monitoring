@@ -1,7 +1,9 @@
 from flask import Flask, jsonify, request
 from flask_pymongo import PyMongo
+from flask_socketio import SocketIO, emit
 
 app = Flask(__name__)
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 app.config['MONGO_URI'] = 'mongodb://mongodb/monitoring-logs'
 
@@ -13,8 +15,9 @@ def charge_point_connected():
     # Receiving Data
     chargePointId = request.json['id']
     timestamp = request.json['timestamp']
-    id = mongo.db.chargePointLogs.insert_one(
-    {'id': chargePointId, 'Type': 'CONNECTION', 'timestamp' : timestamp})
+   # id = mongo.db.chargePointLogs.insert_one(
+    #{'id': chargePointId, 'Type': 'CONNECTION', 'timestamp' : timestamp})
+    emit('cp_connect', { 'id': id})
     return {
         'status_code' : 201
     }
@@ -62,4 +65,4 @@ def not_found(error=None):
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=3000)
+    socketio.run(app,debug=True, port=3001)

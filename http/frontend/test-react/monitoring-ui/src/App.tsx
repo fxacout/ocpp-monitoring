@@ -5,7 +5,7 @@ import io from 'socket.io-client'
 
 function App() {
 
-  const socket = io('http://monitoring_log:3000/ws')
+    const socket = io('http://localhost:3001/ws')
 
 
   return (

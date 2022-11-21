@@ -1,0 +1,6 @@
+websockets
+ocpp
+cryptography
+sphinx_autodoc_typehints
+sphinxcontrib-asyncio
+aioquic
