@@ -6,8 +6,6 @@ services:
       - 9000
   charge_point_1:
     build: ./chargePoint
-    depends_on:
-      - monitoring_system
   mongodb:
     image: mongo
     restart: always

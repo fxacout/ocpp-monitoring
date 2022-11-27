@@ -2,8 +2,7 @@ import argparse
 import asyncio
 import logging
 import os
-import pickle
-import ssl
+import json
 import time
 from collections import deque
 from typing import BinaryIO, Callable, Deque, Dict, List, Optional, Union, cast
@@ -25,8 +24,6 @@ from aioquic.h3.events import (
 )
 from aioquic.quic.configuration import QuicConfiguration
 from aioquic.quic.events import QuicEvent
-from aioquic.quic.logger import QuicFileLogger
-from aioquic.tls import CipherSuite, SessionTicket
 
 try:
     import uvloop
@@ -37,7 +34,7 @@ logger = logging.getLogger("client")
 
 HttpConnection = Union[H0Connection, H3Connection]
 
-USER_AGENT = "central_system/1"
+USER_AGENT = "aioquic/" + aioquic.__version__
 
 
 class URL:
@@ -49,6 +46,24 @@ class URL:
         if parsed.query:
             self.full_path += "?" + parsed.query
         self.scheme = parsed.scheme
+
+
+class HttpRequest:
+    def __init__(
+        self,
+        method: str,
+        url: URL,
+        content: bytes = b"",
+        headers: Optional[Dict] = None,
+    ) -> None:
+        if headers is None:
+            headers = {}
+
+        self.content = content
+        self.headers = headers
+        self.method = method
+        self.url = url
+
 
 class WebSocket:
     def __init__(
@@ -224,115 +239,9 @@ class HttpClient(QuicConnectionProtocol):
 
         return await asyncio.shield(waiter)
 
-
-async def perform_http_request(
-    client: HttpClient,
-    url: str,
-    data: Optional[str],
-    include: bool,
-    output_dir: Optional[str],
-) -> None:
-    # perform request
-    start = time.time()
-    if data is not None:
-        data_bytes = data.encode()
-        http_events = await client.post(
-            url,
-            data=data_bytes,
-            headers={
-                "content-length": str(len(data_bytes)),
-                "content-type": "application/x-www-form-urlencoded",
-            },
-        )
-        method = "POST"
-    else:
-        http_events = await client.get(url)
-        method = "GET"
-    elapsed = time.time() - start
-
-    # print speed
-    octets = 0
-    for http_event in http_events:
-        if isinstance(http_event, DataReceived):
-            octets += len(http_event.data)
-    logger.info(
-        "Response received for %s %s : %d bytes in %.1f s (%.3f Mbps)"
-        % (method, urlparse(url).path, octets, elapsed, octets * 8 / elapsed / 1000000)
-    )
-
-    # output response
-    if output_dir is not None:
-        output_path = os.path.join(
-            output_dir, os.path.basename(urlparse(url).path) or "index.html"
-        )
-        with open(output_path, "wb") as output_file:
-            write_response(
-                http_events=http_events, include=include, output_file=output_file
-            )
-
-
-def process_http_pushes(
-    client: HttpClient,
-    include: bool,
-    output_dir: Optional[str],
-) -> None:
-    for _, http_events in client.pushes.items():
-        method = ""
-        octets = 0
-        path = ""
-        for http_event in http_events:
-            if isinstance(http_event, DataReceived):
-                octets += len(http_event.data)
-            elif isinstance(http_event, PushPromiseReceived):
-                for header, value in http_event.headers:
-                    if header == b":method":
-                        method = value.decode()
-                    elif header == b":path":
-                        path = value.decode()
-        logger.info("Push received for %s %s : %s bytes", method, path, octets)
-
-        # output response
-        if output_dir is not None:
-            output_path = os.path.join(
-                output_dir, os.path.basename(path) or "index.html"
-            )
-            with open(output_path, "wb") as output_file:
-                write_response(
-                    http_events=http_events, include=include, output_file=output_file
-                )
-
-
-def write_response(
-    http_events: Deque[H3Event], output_file: BinaryIO, include: bool
-) -> None:
-    for http_event in http_events:
-        if isinstance(http_event, HeadersReceived) and include:
-            headers = b""
-            for k, v in http_event.headers:
-                headers += k + b": " + v + b"\r\n"
-            if headers:
-                output_file.write(headers + b"\r\n")
-        elif isinstance(http_event, DataReceived):
-            output_file.write(http_event.data)
-
-
-def save_session_ticket(ticket: SessionTicket) -> None:
-    """
-    Callback which is invoked by the TLS engine when a new session ticket
-    is received.
-    """
-    logger.info("New session ticket received")
-    if args.session_ticket:
-        with open(args.session_ticket, "wb") as fp:
-            pickle.dump(ticket, fp)
-
-
 async def main(
     configuration: QuicConfiguration,
     urls: List[str],
-    data: Optional[str],
-    include: bool,
-    output_dir: Optional[str],
     local_port: int,
     zero_rtt: bool,
 ) -> None:
@@ -372,41 +281,25 @@ async def main(
         port,
         configuration=configuration,
         create_protocol=HttpClient,
-        session_ticket_handler=save_session_ticket,
         local_port=local_port,
         wait_connected=not zero_rtt,
     ) as client:
         client = cast(HttpClient, client)
 
         if parsed.scheme == "wss":
-            ws = await client.websocket(urls[0], subprotocols=["chat", "superchat"]) # DEFINE PROTOCOLS OCPP
+            ws = await client.websocket(urls[0], subprotocols=["ocpp"])
 
             # send some messages and receive reply
+            protocols = ['BootNotification', 'Heartbeat']
             for i in range(2):
-                message = "Hello {}, WebSocket!".format(i)
-                print("> " + message)
-                await ws.send(message)
+                message = [i, protocols[i], 'BootNotification', {}]
+                print("> " + str(message))
+                await ws.send(json.dumps(message))
 
                 message = await ws.recv()
-                print("< " + message)
+                print("< " + str(message))
 
             await ws.close()
-        else:
-            # perform request
-            coros = [
-                perform_http_request(
-                    client=client,
-                    url=url,
-                    data=data,
-                    include=include,
-                    output_dir=output_dir,
-                )
-                for url in urls
-            ]
-            await asyncio.gather(*coros)
-
-            # process http pushes
-            process_http_pushes(client=client, include=include, output_dir=output_dir)
         client._quic.close(error_code=ErrorCode.H3_NO_ERROR)
 
 
@@ -421,63 +314,6 @@ if __name__ == "__main__":
         "--ca-certs", type=str, help="load CA certificates from the specified file"
     )
     parser.add_argument(
-        "--cipher-suites",
-        type=str,
-        help="only advertise the given cipher suites, e.g. `AES_256_GCM_SHA384,CHACHA20_POLY1305_SHA256`",
-    )
-    parser.add_argument(
-        "-d", "--data", type=str, help="send the specified data in a POST request"
-    )
-    parser.add_argument(
-        "-i",
-        "--include",
-        action="store_true",
-        help="include the HTTP response headers in the output",
-    )
-    parser.add_argument(
-        "--max-data",
-        type=int,
-        help="connection-wide flow control limit (default: %d)" % defaults.max_data,
-    )
-    parser.add_argument(
-        "--max-stream-data",
-        type=int,
-        help="per-stream flow control limit (default: %d)" % defaults.max_stream_data,
-    )
-    parser.add_argument(
-        "-k",
-        "--insecure",
-        action="store_true",
-        help="do not validate server certificate",
-    )
-    parser.add_argument("--legacy-http", action="store_true", help="use HTTP/0.9")
-    parser.add_argument(
-        "--output-dir",
-        type=str,
-        help="write downloaded files to this directory",
-    )
-    parser.add_argument(
-        "-q",
-        "--quic-log",
-        type=str,
-        help="log QUIC events to QLOG files in the specified directory",
-    )
-    parser.add_argument(
-        "-l",
-        "--secrets-log",
-        type=str,
-        help="log secrets to a file, for use with Wireshark",
-    )
-    parser.add_argument(
-        "-s",
-        "--session-ticket",
-        type=str,
-        help="read and write session ticket from the specified file",
-    )
-    parser.add_argument(
-        "-v", "--verbose", action="store_true", help="increase logging verbosity"
-    )
-    parser.add_argument(
         "--local-port",
         type=int,
         default=0,
@@ -489,40 +325,13 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    logging.basicConfig(
-        format="%(asctime)s %(levelname)s %(name)s %(message)s",
-        level=logging.DEBUG if args.verbose else logging.INFO,
-    )
-
-    if args.output_dir is not None and not os.path.isdir(args.output_dir):
-        raise Exception("%s is not a directory" % args.output_dir)
 
     # prepare configuration
     configuration = QuicConfiguration(
-        is_client=True, alpn_protocols=H0_ALPN if args.legacy_http else H3_ALPN
+        is_client=True, alpn_protocols=H3_ALPN
     )
     if args.ca_certs:
         configuration.load_verify_locations(args.ca_certs)
-    if args.cipher_suites:
-        configuration.cipher_suites = [
-            CipherSuite[s] for s in args.cipher_suites.split(",")
-        ]
-    if args.insecure:
-        configuration.verify_mode = ssl.CERT_NONE
-    if args.max_data:
-        configuration.max_data = args.max_data
-    if args.max_stream_data:
-        configuration.max_stream_data = args.max_stream_data
-    if args.quic_log:
-        configuration.quic_logger = QuicFileLogger(args.quic_log)
-    if args.secrets_log:
-        configuration.secrets_log_file = open(args.secrets_log, "a")
-    if args.session_ticket:
-        try:
-            with open(args.session_ticket, "rb") as fp:
-                configuration.session_ticket = pickle.load(fp)
-        except FileNotFoundError:
-            pass
 
     if uvloop is not None:
         uvloop.install()
@@ -530,9 +339,6 @@ if __name__ == "__main__":
         main(
             configuration=configuration,
             urls=args.url,
-            data=args.data,
-            include=args.include,
-            output_dir=args.output_dir,
             local_port=args.local_port,
             zero_rtt=args.zero_rtt,
         )

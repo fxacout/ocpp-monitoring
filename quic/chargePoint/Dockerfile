@@ -6,7 +6,6 @@ WORKDIR /app
 RUN apt-get update && apt-get install libssl-dev
 
 COPY requirements.txt requirements.txt
-RUN pip3 install asgiref dnslib httpbin starlette "werkzeug<2.1" wsproto
 RUN pip3 install -r requirements.txt
 
 EXPOSE 9000
