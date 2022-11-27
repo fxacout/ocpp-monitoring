@@ -5,7 +5,9 @@ import io from 'socket.io-client'
 
 function App() {
 
-    const socket = io('http://localhost:3001/ws')
+    const socket = io('http://localhost:3001', {
+        autoConnect: true
+    })
 
 
   return (

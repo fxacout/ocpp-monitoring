@@ -2,7 +2,7 @@ import React, { createRef } from 'react';
 import { Edge, Network, Node, Options } from 'vis-network/peer';
 import { DataSet } from 'vis-data/peer'
 import type { Socket } from 'socket.io-client';
-import { ChargePointConnected, ChargePointDisconnected, ChargePointLatency } from '../models/ChargePoint';
+import {ChargePointConnected, ChargePointDisconnected, ChargePointLatency, UpdateAllNodes} from '../models/ChargePoint';
 
 
 export interface GraphProps {
@@ -22,20 +22,27 @@ export class Graph extends React.Component<GraphProps, GraphState> {
 
     private interval: NodeJS.Timer | undefined
 
+    private socket: Socket
+
     state = {
-        nodes: new DataSet([{ id: 1, label: 'Central System', color: '#76B947' }, { id: 2, label: 'Charge Point 1' }], {}),
+        nodes: new DataSet([{ id: 1, label: 'Central System', color: '#76B947' }], {}),
         edges: new DataSet(),
         heartbeat: false
     } as GraphState
-    
+
 
     constructor(props: GraphProps) {
         super(props)
+        this.socket = props.socket
         this.container = createRef<HTMLDivElement>()
     }
 
     addChargePoint = (id: number, responseTime: number) => {
         this.setState((state) => {
+            if (state.nodes.get(id)) {
+                console.log('Node already created')
+                return state
+            }
             state.nodes.add({ id, label: `Charge Point ${id}` })
             state.edges.add({ from: id, to: 1, label: this.responseTimeToString(responseTime) })
             return state
@@ -54,21 +61,35 @@ export class Graph extends React.Component<GraphProps, GraphState> {
     componentDidMount() {
         this.container.current && new Network(this.container.current, { nodes: this.state.nodes, edges: this.state.edges }, this.props.options);
         this.interval = setInterval(() => this.tick(), 1000);
+        fetch("http://localhost:3001/getAllNodesId", {
+            method: 'get'
+        }).then((response) =>{
+            return response.json()
+        }).then((idsList: Array<number | string>) => {
+            console.log(idsList)
+            idsList.forEach((nodeId) => this.addChargePoint(Number(nodeId), 0));
+        })
 
         // Set listeners from WebSocket
 
-        this.props.socket.on('cp_connect', (chargePointConnected: ChargePointConnected) => {
-            this.addChargePoint(Number(chargePointConnected.id), 0)
+        this.socket.on('connection', () => console.log('Connected!'))
+
+        this.socket.on('cp_connect', (chargePointConnected: ChargePointConnected) => {
+            console.log('Something connected')
+            this.addChargePoint(Number(chargePointConnected.id), Number(chargePointConnected.latency))
         })
 
-        this.props.socket.on('cp_disconnect', (chargePointDisconnected: ChargePointDisconnected) => {
+        this.socket.on('cp_heartbeat',(cpLatencyUpdate: ChargePointLatency) => {
+            console.log("Heartbeat! <3")
+            console.log(cpLatencyUpdate)
+            this.updateLatency(cpLatencyUpdate)
+        })
+
+        this.socket.on('cp_disconnect', (chargePointDisconnected: ChargePointDisconnected) => {
             this.deleteChargePoint(Number(chargePointDisconnected.id))
         })
-        
-        this.props.socket.on('cp_latency', (chargePointLatency: ChargePointLatency) => {
-            this.updateLatency(chargePointLatency)
-        })
-        this.props.socket.connect()
+
+        this.socket.connect()
     }
 
     componentWillUnmount() {
@@ -78,25 +99,31 @@ export class Graph extends React.Component<GraphProps, GraphState> {
     deleteChargePoint = (id: number) => {
 
         this.setState((state) => {
-            let edge = state.edges.forEach((edge) => {
-                if (edge.from === id) {
-                    state.edges.remove(id)
-                }
-            })
+            this.removeEdgesForNode(id, state.edges)
             state.nodes.remove(id)
             return state
         })
     }
+    
+    private removeEdgesForNode(id: number, edges: DataSet<Edge>) {
+    edges.forEach((edge) => {
+        if (edge.from === id) {
+            edges.remove(id)
+        }
+    })
+}
 
     private responseTimeToString(responseTime: number) {
-        return `Latency: ${responseTime}`
+        return `Latency: ${Math.trunc(responseTime * 10e5)/100} ms`
     }
 
     private updateLatency(chargePointLatency: ChargePointLatency) {
         this.setState((prevState: GraphState): GraphState => {
             prevState.edges.forEach((edge) => {
-                if (edge.from === chargePointLatency.id) {
-                    prevState.edges.update({id: edge.id, label: this.responseTimeToString(chargePointLatency.latency)})
+                console.dir(edge)
+                if (edge.from === Number(chargePointLatency.id)) {
+                    console.log('Llego?')
+                    prevState.edges.update({id: edge.id, label: this.responseTimeToString(Number(chargePointLatency.latency))})
                 }
             })
             return prevState
@@ -112,7 +139,6 @@ export class Graph extends React.Component<GraphProps, GraphState> {
     }
 
     render(): React.ReactNode {
-        console.log(JSON.stringify(this.state.nodes))
         return <div ref={this.container} style={{ height: '500px', width: '800px' }} />;
     }
 

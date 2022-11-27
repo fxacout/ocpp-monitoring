@@ -1,10 +1,11 @@
 """Process individual messages from a WebSocket connection."""
 import re
+import json
 from time import time
 from mitmproxy import ctx, http
 import requests
 
-
+requestIdTypeDict = dict()
 
 baseUrlMonitoringLog= 'http://monitoring_log:3000/{}'
 headers = {'content-type' : 'application/json'}
@@ -13,20 +14,6 @@ def get_chargePoint_id(message: bytes) -> str:
     messageString = message.decode("utf-8")
     id = re.search(r'CP_(.*?)', messageString)
     return messageString[id.end():] or ''
-
-def get_request_type(message: bytes):
-    messageString = message.decode("utf-8")
-    isHeartbeat = re.search(r'Heartbeat', messageString)
-
-    if isHeartbeat != None:
-        return 'Heartbeat'
-    
-    isBootNotification = re.search(r'BootNotification',messageString)
-
-    if isBootNotification != None:
-        return 'BootNotification'
-    
-    return ''
 
 def get_duration_time(message_created: float) -> float:
     return time() - message_created
@@ -40,19 +27,24 @@ def websocket_message(flow: http.HTTPFlow):
     # was the message sent from the client or server?
     if message.from_client:
         ctx.log.info(f"Client sent a message: {message.content!r}")
-        request_type = get_request_type(message.content)
+        [_, requestId, request_type, _] = json.loads(message.content.decode())
+
+        chargePointId = get_chargePoint_id(flow.request.data.path)
+        requestIdTypeDict[requestId] = [request_type, chargePointId]
+    else:
+        [_, requestId, _] = json.loads(message.content.decode())
+
+        ctx.log.info(f"Server sent a message: {message.content!r}")
+
+        request_type, chargePointId = requestIdTypeDict[requestId]
 
         if request_type == 'BootNotification':
-            payload = {'id':get_chargePoint_id(flow.request.data.path), 'timestamp': str(time())}
+            payload = {'id': chargePointId, 'timestamp': str(time()), 'duration': get_duration_time(message.timestamp)}
             requests.post(baseUrlMonitoringLog.format('chargePoint'), headers=headers,json=payload)
 
         if request_type == 'Heartbeat':
-            payload = {'id':get_chargePoint_id(flow.request.data.path), 'timestamp': str(time())}
+            payload = {'id':get_chargePoint_id(flow.request.data.path), 'timestamp': str(time()), 'duration': get_duration_time(message.timestamp)}
             requests.post(baseUrlMonitoringLog.format('heartbeat'), headers=headers,json=payload)
-    else:
-        ctx.log.info(f"Server sent a message: {message.content!r}")
-        payload = {'id':get_chargePoint_id(flow.request.data.path),'duration': get_duration_time(message.timestamp)}
-        requests.post(baseUrlMonitoringLog.format('duration'), headers=headers,json=payload)
 
     # manipulate the message content
     # message.content = re.sub(rb'Heartbeat', b'Beatheart', message.content)

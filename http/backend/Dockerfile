@@ -1,11 +1,9 @@
-FROM python:3.8-alpine
+FROM python:3.8.15-bullseye
 
 WORKDIR /code
 
 ENV FLASK_APP=src/app.py
 ENV FLASK_RUN_HOST=0.0.0.0
-
-RUN apk add --no-cache gcc musl-dev linux-headers
 
 COPY requirements.txt requirements.txt
 
