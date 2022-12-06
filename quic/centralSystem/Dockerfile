@@ -12,4 +12,4 @@ EXPOSE 9000
 
 COPY . .
 
-CMD [ "python3", "src/index.py", "--certificate", "src/certs/ssl_cert.pem", "--private-key", "src/certs/ssl_key.pem"]
+CMD [ "python3", "src/index.py", "--certificate", "src/certs/centralsystem.test.crt", "--private-key", "src/certs/centralsystem.test.key"]

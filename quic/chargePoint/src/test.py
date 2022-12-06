@@ -1,8 +1,9 @@
 import argparse
 import asyncio
 import logging
+import os
 import json
-from random import randint
+import time
 from collections import deque
 from typing import BinaryIO, Callable, Deque, Dict, List, Optional, Union, cast
 from urllib.parse import urlparse
@@ -307,6 +308,12 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="HTTP/3 client")
     parser.add_argument(
+        "url", type=str, nargs="+", help="the URL to query (must be HTTPS)"
+    )
+    parser.add_argument(
+        "--ca-certs", type=str, help="load CA certificates from the specified file"
+    )
+    parser.add_argument(
         "--local-port",
         type=int,
         default=0,
@@ -323,14 +330,15 @@ if __name__ == "__main__":
     configuration = QuicConfiguration(
         is_client=True, alpn_protocols=H3_ALPN
     )
+    if args.ca_certs:
+        configuration.load_verify_locations(args.ca_certs)
 
     if uvloop is not None:
         uvloop.install()
-    configuration.load_verify_locations("./src/certs/myCA.pem")
     asyncio.run(
         main(
             configuration=configuration,
-            urls=["wss://centralsystem:9000/CP_{}".format(randint(2,3000))],
+            urls=args.url,
             local_port=args.local_port,
             zero_rtt=args.zero_rtt,
         )

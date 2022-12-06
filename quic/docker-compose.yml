@@ -1,20 +1,10 @@
 version: '3.9'
 services:
-  central_system:
+  centralsystem:
     build: ./centralSystem
     expose:
       - 9000
+
   charge_point_1:
     build: ./chargePoint
-  mongodb:
-    image: mongo
-    restart: always
-    ports:
-      - 27017:27017
-  nginx_quic:
-    image: ymuski/nginx-quic
-    expose:
-      - 80
-      - 443
-  
   
