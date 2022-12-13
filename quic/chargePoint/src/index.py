@@ -24,6 +24,8 @@ from aioquic.h3.events import (
 from aioquic.quic.configuration import QuicConfiguration
 from aioquic.quic.events import QuicEvent
 
+from wsHandler import handle_ws
+
 try:
     import uvloop
 except ImportError:
@@ -289,14 +291,7 @@ async def main(
             ws = await client.websocket(urls[0], subprotocols=["ocpp"])
 
             # send some messages and receive reply
-            protocols = ['BootNotification', 'Heartbeat']
-            for i in range(2):
-                message = [i, protocols[i], 'BootNotification', {}]
-                print("> " + str(message))
-                await ws.send(json.dumps(message))
-
-                message = await ws.recv()
-                print("< " + str(message))
+            await handle_ws(ws)
 
             await ws.close()
         client._quic.close(error_code=ErrorCode.H3_NO_ERROR)
@@ -330,7 +325,7 @@ if __name__ == "__main__":
     asyncio.run(
         main(
             configuration=configuration,
-            urls=["wss://centralsystem:9000/CP_{}".format(randint(2,3000))],
+            urls=["wss://monitoringsystem:9000/CP_{}".format(randint(2,3000))],
             local_port=args.local_port,
             zero_rtt=args.zero_rtt,
         )

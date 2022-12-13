@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM mitmproxy/mitmproxy:latest
+FROM mitmproxy/mitmproxy:dev
 
 WORKDIR /app
 

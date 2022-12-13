@@ -28,7 +28,6 @@ async def ws(websocket):
     """
     WebSocket echo endpoint.
     """
-    print('INFOOOO',flush=True)
     chargePointId = websocket.path_params["cpid"]
     if "ocpp" in websocket.scope["subprotocols"]:
         subprotocol = "ocpp"
