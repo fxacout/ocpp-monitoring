@@ -2,6 +2,8 @@ version: '3.9'
 services:
   centralsystem:
     build: ./centralSystem
+    depends_on:
+      - monitoringsystem
     expose:
       - 9000
 
@@ -15,6 +17,13 @@ services:
 
   charge_point_1:
     build: ./chargePoint
+    depends_on:
+      - monitoringsystem
+
+  charge_point_2:
+    build: ./chargePoint
+    depends_on:
+      - monitoringsystem
   
   monitoring_log:
     build: ./backend

@@ -38,22 +38,20 @@ def get_all_nodes_id():
 
 @app.route('/heartbeat', methods=['POST'])
 def charge_point_heartbeat():
-    chargePointId = request.json['id']
     timestamp = request.json['timestamp']
     duration = request.json['duration']
     mongo.db.chargePointLogs.insert_one(
-    {'id': chargePointId, 'Type': 'HEARTBEAT', 'timestamp' : timestamp, 'duration': duration}
+    {'Type': 'HEARTBEAT', 'timestamp' : timestamp, 'duration': duration}
     )
-    socketio.emit('cp_heartbeat', { 'id': chargePointId, 'latency': duration})
+    socketio.emit('cp_heartbeat', { 'latency': duration})
     return {
         'status_code' : 201
     }
 
 @app.route('/disconnect', methods=['POST'])
 def charge_point_disconnect():
-    chargePointId = request.json['id']
+    chargePointId = currentIds.pop()
     timestamp = request.json['timestamp']
-    currentIds.remove(chargePointId)
     socketio.emit('cp_disconnect', { 'id': chargePointId})
     id = mongo.db.chargePointLogs.insert_one(
     {'id': chargePointId, 'Type': 'DISCONNECT', 'timestamp' : timestamp})
