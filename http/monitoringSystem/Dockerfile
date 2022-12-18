@@ -11,4 +11,4 @@ COPY . .
 
 EXPOSE 9000
 
-ENTRYPOINT [ "mitmdump", "-p","9000", "--mode","reverse:central_system:9000", "-s","./src/index.py"]
+ENTRYPOINT [ "mitmdump", "-p","9000", "--mode","reverse:http://central_system:9000", "-s","./src/index.py"]
