@@ -26,10 +26,10 @@ services:
       - "27017:27017"
 
   frontend:
-    build: ./frontend/test-react/monitoring-ui
+    build: ./monitoring-ui
     volumes:
-      - './frontend/test-react/monitoring-ui:/app'
-      - './frontend/test-react/monitoring-ui/node_modules:/app/node_modules'
+      - './monitoring-ui:/app'
+      - './monitoring-ui/node_modules:/app/node_modules'
     ports:
       - "3000:3000"
     environment:
