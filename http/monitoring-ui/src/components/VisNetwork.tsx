@@ -1,13 +1,13 @@
 import React, { createRef } from 'react';
 import { Edge, Network, Node, Options } from 'vis-network/peer';
 import { DataSet } from 'vis-data/peer'
-import type { Socket } from 'socket.io-client';
 import {ChargePointConnected, ChargePointDisconnected, ChargePointLatency, UpdateAllNodes} from '../models/ChargePoint';
+import { AvailableProtocols, SocketListener } from '../models/SocketListener';
 
 
 export interface GraphProps {
     options: Options
-    socket: Socket
+    socketListener: SocketListener
 }
 
 export interface GraphState {
@@ -22,7 +22,7 @@ export class Graph extends React.Component<GraphProps, GraphState> {
 
     private interval: NodeJS.Timer | undefined
 
-    private socket: Socket
+    private socketListener: SocketListener
 
     state = {
         nodes: new DataSet([{ id: 1, label: 'Central System', color: '#76B947' }], {}),
@@ -33,14 +33,13 @@ export class Graph extends React.Component<GraphProps, GraphState> {
 
     constructor(props: GraphProps) {
         super(props)
-        this.socket = props.socket
+        this.socketListener = props.socketListener
         this.container = createRef<HTMLDivElement>()
     }
 
     addChargePoint = (id: number, responseTime: number) => {
         this.setState((state) => {
             if (state.nodes.get(id)) {
-                console.log('Node already created')
                 return state
             }
             state.nodes.add({ id, label: `Charge Point ${id}` })
@@ -71,25 +70,20 @@ export class Graph extends React.Component<GraphProps, GraphState> {
         })
 
         // Set listeners from WebSocket
+        this.socketListener.addHandler(AvailableProtocols.Connection, () => console.log('Connected!'))
 
-        this.socket.on('connection', () => console.log('Connected!'))
-
-        this.socket.on('cp_connect', (chargePointConnected: ChargePointConnected) => {
-            console.log('Something connected')
+        this.socketListener.addHandler(AvailableProtocols.CpConnect, (chargePointConnected: ChargePointConnected) => {
             this.addChargePoint(Number(chargePointConnected.id), Number(chargePointConnected.latency))
         })
 
-        this.socket.on('cp_heartbeat',(cpLatencyUpdate: ChargePointLatency) => {
-            console.log("Heartbeat! <3")
-            console.log(cpLatencyUpdate)
+        this.socketListener.addHandler(AvailableProtocols.CpHeartbeat, (cpLatencyUpdate: ChargePointLatency) => {
             this.updateLatency(cpLatencyUpdate)
         })
 
-        this.socket.on('cp_disconnect', (chargePointDisconnected: ChargePointDisconnected) => {
+        this.socketListener.addHandler(AvailableProtocols.CpDisconnect, (chargePointDisconnected: ChargePointDisconnected) => {
             this.deleteChargePoint(Number(chargePointDisconnected.id))
         })
-
-        this.socket.connect()
+        
     }
 
     componentWillUnmount() {
@@ -120,9 +114,7 @@ export class Graph extends React.Component<GraphProps, GraphState> {
     private updateLatency(chargePointLatency: ChargePointLatency) {
         this.setState((prevState: GraphState): GraphState => {
             prevState.edges.forEach((edge) => {
-                console.dir(edge)
                 if (edge.from === Number(chargePointLatency.id)) {
-                    console.log('Llego?')
                     prevState.edges.update({id: edge.id, label: this.responseTimeToString(Number(chargePointLatency.latency))})
                 }
             })
