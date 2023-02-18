@@ -1,0 +1,15 @@
+version: '3'
+services:
+  authentication_system:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./:/app
+    environment:
+      - SIGNING_KEY=thismustbethebestkey
+  mongo:
+    image: mongo
+    restart: always
+    expose:
+      - 27017
