@@ -1,4 +1,4 @@
-import React from "react"
+import React from "react";
 
 export function Audit() {
   return (
@@ -177,5 +177,5 @@ export function Audit() {
       </ul>
       {/*<!-- End Colored Activity feed --> */}
     </>
-  )
+  );
 }
