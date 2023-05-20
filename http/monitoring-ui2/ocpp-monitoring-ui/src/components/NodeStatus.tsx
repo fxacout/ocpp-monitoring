@@ -11,9 +11,8 @@ export function NodeStatus() {
   const [latencyMap, updateLatencyMap] = useState<Record<string, number>>({})
 
   socketServiceInstance.addHeartbeatHandler(({id, latency}) => {
-    console.log(`Heartbeat ${id}, ${latency}`)
     updateLatencyMap((oldValue) => {
-      oldValue[id] = Number(latency) * 10e6
+      oldValue[id] = Number(latency) * 10e3
       return oldValue
     })
   })

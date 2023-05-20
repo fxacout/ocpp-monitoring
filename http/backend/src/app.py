@@ -49,6 +49,21 @@ def charge_point_heartbeat():
         'status_code' : 201
     }
 
+
+@app.route('/user', methods=['POST'])
+def user_log():
+    userId = request.json['id']
+    name = request.json['name']
+    email = request.json['email']
+    image = request.json['image']
+    mongo.db.userLogs.insert_one(
+    {'id': userId, 'Type': 'LogIn', 'name': name, 'email': email, 'image': image}
+    )
+    socketio.emit('user_connect', {'id': userId, 'name': name, 'email': email, 'image': image})
+    return {
+        'status_code' : 201
+    }
+
 @app.route('/disconnect', methods=['POST'])
 def charge_point_disconnect():
     chargePointId = request.json['id']

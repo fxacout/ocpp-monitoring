@@ -41,8 +41,8 @@ const getPodInfo = (id: string, position: google.maps.LatLngLiteral) => {
 function Map() {
   const center = useMemo(() => ({ lat: 36.7150286, lng: -4.4738605 }), []);
 
-  const [markersReady, setAreMarkersReady] = useState<MarkerPropsEnhanced[]>([]);
-  if (markersReady.length === 0) {
+  const [markersReady, setAreMarkersReady] = useState<boolean>(false);
+  if (!markersReady) {
     socketServiceInstance.getAllNodesId().then((value) => {
       const newMarkers = value.map(
         (elem) => ({
@@ -52,7 +52,7 @@ function Map() {
         })
         )
       setAreMarkersReady(
-        newMarkers
+        true
       )
       updateMarkers((oldValue) => {
         if (!oldValue.find((elem) => newMarkers.some((newElem) => newElem.id === elem.id))) {
@@ -62,7 +62,6 @@ function Map() {
       })
     })
   }
-  console.dir(markersReady)
 
   const [markers, updateMarkers] = useState<MarkerPropsEnhanced[]>([
     {
@@ -74,6 +73,10 @@ function Map() {
 
   socketServiceInstance.addConnectHandler(({ id }) => {
     updateMarkers((oldState) => {
+      console.log(id)
+      if (oldState.find((elem) => elem.id == id)) {
+        return oldState
+      }
       oldState.push({
         id,
         position: randomizeLocation(center),
@@ -83,15 +86,16 @@ function Map() {
     });
   });
   socketServiceInstance.addDisconnectHandler(({ id }) => {
+
     updateMarkers((oldState) => {
-      const index = oldState.findIndex((elem) => elem.id === id);
+      const index = oldState.findIndex((elem) => elem.id == id);
       if (index > -1) {
         oldState.splice(index, 1);
       }
       return oldState;
     });
   });
-  if (markersReady.length === 0) {
+  if (!markersReady) {
     return (
       <div>Loading...</div>
     );

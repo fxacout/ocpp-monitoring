@@ -1,7 +1,8 @@
-import NextAuth from "next-auth"
+import NextAuth, { AuthOptions } from "next-auth"
 import GoogleProvider from "next-auth/providers/google"
 import CredentialsProvider from 'next-auth/providers/credentials'
-export const authOptions = {
+import { socketServiceInstance } from "@/service/SocketService"
+export const authOptions: AuthOptions = {
   // Configure one or more authentication providers
   providers: [
     GoogleProvider({
@@ -42,15 +43,19 @@ export const authOptions = {
         // Return null if user data could not be retrieved
         return {
           id: '10',
-          name: credentials?.username
+          name: credentials?.username,
+          email: `${credentials?.username}@ocppmonitoring.com`,
+          image: 'http://localhost:3000/user.png'
         }
       }
     })
   ],
   callbacks: {
-    async jwt({ token }: {token: any}) {
-      token.userRole = "admin"
-      console.dir(token)
+    async jwt({ token, user, trigger }) {
+      if (trigger === 'signIn' && user) {
+        await socketServiceInstance.emitUserLogin(user)
+      }
+      console.log('Emitted user login')
       return token
     },
   }

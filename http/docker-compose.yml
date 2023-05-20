@@ -46,23 +46,3 @@ services:
     build: ./chargePoint
     depends_on:
       - monitoring_system
-  charge_point_3:
-    build: ./chargePoint
-    depends_on:
-      - monitoring_system
-  charge_point_4:
-    build: ./chargePoint
-    depends_on:
-      - monitoring_system
-  charge_point_5:
-    build: ./chargePoint
-    depends_on:
-      - monitoring_system
-  charge_point_6:
-    build: ./chargePoint
-    depends_on:
-      - monitoring_system
-  charge_point_7:
-    build: ./chargePoint
-    depends_on:
-      - monitoring_system
