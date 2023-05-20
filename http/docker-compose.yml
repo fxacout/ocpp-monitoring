@@ -26,10 +26,10 @@ services:
       - "27017:27017"
 
   frontend:
-    build: ./monitoring-ui
+    build: ./monitoring-ui2/ocpp-monitoring-ui
     volumes:
-      - './monitoring-ui:/app'
-      - './monitoring-ui/node_modules:/app/node_modules'
+      - './monitoring-ui2/ocpp-monitoring-ui:/app'
+      - './monitoring-ui2/ocpp-monitoring-ui/node_modules:/app/node_modules'
     ports:
       - "3000:3000"
     environment:
@@ -43,6 +43,26 @@ services:
       - monitoring_system
 
   charge_point_2:
+    build: ./chargePoint
+    depends_on:
+      - monitoring_system
+  charge_point_3:
+    build: ./chargePoint
+    depends_on:
+      - monitoring_system
+  charge_point_4:
+    build: ./chargePoint
+    depends_on:
+      - monitoring_system
+  charge_point_5:
+    build: ./chargePoint
+    depends_on:
+      - monitoring_system
+  charge_point_6:
+    build: ./chargePoint
+    depends_on:
+      - monitoring_system
+  charge_point_7:
     build: ./chargePoint
     depends_on:
       - monitoring_system
