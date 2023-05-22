@@ -19,6 +19,8 @@ services:
       - 3000
     ports:
       - "3001:3000"
+    depends_on:
+      - authentication_system
   mongodb:
     image: mongo
     restart: always
@@ -46,3 +48,12 @@ services:
     build: ./chargePoint
     depends_on:
       - monitoring_system
+
+  authentication_system:
+    build: ./authenticationSystem
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./:/app
+    environment:
+      - SIGNING_KEY=thismustbethebestkey
