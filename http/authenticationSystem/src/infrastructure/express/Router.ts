@@ -15,7 +15,7 @@ export class Router {
       }).status(200)
     })
 
-    router.post('/verify', (req, res, next) => this.userVerifierController.validateUser(req, res, next))
+    router.post('/verificar', (req, res, next) => {console.log("AAAAAAAAAAAAAA");return this.userVerifierController.validateUser(req, res, next)})
 
     router.post('/create', (req, res, next) => this.userVerifierController.createUser(req, res, next))
 

@@ -5,7 +5,7 @@ import { singleton } from "tsyringe";
 export class DbConnection {
   
   async connect() {
-    mongoose.connect('mongodb://mongo:27017/users');
+    mongoose.connect('mongodb://mongodb:27017/users');
   }
 
 }

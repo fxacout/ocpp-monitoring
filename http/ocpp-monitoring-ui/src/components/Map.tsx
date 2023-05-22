@@ -12,7 +12,7 @@ export type MarkerPropsEnhanced = MarkerProps & { id: string };
 
 export function CustomMap() {
   const { isLoaded } = useLoadScript({
-    googleMapsApiKey: "AIzaSyCiL5ZuxR0cGatQIEqz-B2ft-iXqbf5FeQ",
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || 'EMPTY',
   });
 
   if (!isLoaded) return <div>Loading...</div>;

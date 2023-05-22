@@ -2,6 +2,7 @@ import NextAuth, { AuthOptions } from "next-auth"
 import GoogleProvider from "next-auth/providers/google"
 import CredentialsProvider from 'next-auth/providers/credentials'
 import { socketServiceInstance } from "@/service/SocketService"
+import axios from "axios"
 export const authOptions: AuthOptions = {
   // Configure one or more authentication providers
   providers: [
@@ -28,6 +29,7 @@ export const authOptions: AuthOptions = {
         // You can also use the `req` object to obtain additional parameters
         // (i.e., the request IP address)
         /*
+        
         const res = await fetch("/your/endpoint", {
           method: 'POST',
           body: JSON.stringify(credentials),
@@ -40,6 +42,18 @@ export const authOptions: AuthOptions = {
           return user
         }
         */
+       console.log(`Enable auth: ${process.env.ENABLE_AUTH}`)
+       if (process.env.ENABLE_AUTH === 'true') {
+        const res = await axios.post('http://authentication_system:3000/verify', {
+          username: credentials?.username,
+          password: credentials?.password
+        })
+        console.log(JSON.stringify(res))
+        if (res.status !== 200) {
+          console.log(`Error logging in: ${res.status}, ${res.data}`)
+          return null
+        }
+       }  
         // Return null if user data could not be retrieved
         return {
           id: '10',
