@@ -1,13 +1,11 @@
 import Hero from '../components/Hero';
 import { NavBar } from '../components/NavBar';
-import { PageSkeleton } from '../components/PageSkeleton';
 
 
 const Intro = () => (
   <div>
-    <PageSkeleton>
+    <NavBar></NavBar>
     <Hero></Hero>
-    </PageSkeleton>
   </div>
 );
 

@@ -1,7 +1,11 @@
 import { Fragment } from "react";
 import { Disclosure, Menu, Transition } from "@headlessui/react";
 import { Bars3Icon, BellIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import Container from 'react-bootstrap/Container';
 import { signOut, useSession } from "next-auth/react";
+import { Session } from 'next-auth';
+import Image from 'next/image';
+import { Navbar, Nav, NavDropdown } from 'react-bootstrap';
 
 const navigation = [
   { name: "Dashboard", href: "#", current: true }
@@ -11,9 +15,8 @@ function classNames(...classes: any[]) {
   return classes.filter(Boolean).join(" ");
 }
 
-export function NavBar() {
-  const {data: session} = useSession();
-  const {name , image} = session?.user;
+function NavBarLoggedIn(session: Session) {
+  const { name, image } = session.user!;
   return (
     <Disclosure as="nav" className="bg-gray-800">
       {({ open }) => (
@@ -68,15 +71,15 @@ export function NavBar() {
                 {/* Profile dropdown */}
                 <div className="hidden sm:ml-6 sm:block">
                   <div className="flex space-x-4">
-                    
-                      <a
-                        className={classNames(
-                          "text-white"
-                        )}
-                      >
-                        {`Hello! ${name}`}
-                      </a>
-                    
+
+                    <a
+                      className={classNames(
+                        "text-white"
+                      )}
+                    >
+                      {`Hello! ${name}`}
+                    </a>
+
                   </div>
                 </div>
                 <Menu as="div" className="relative ml-3">
@@ -85,7 +88,7 @@ export function NavBar() {
                       <span className="sr-only">Open user menu</span>
                       <img
                         className="h-8 w-8 rounded-full"
-                        src={image}
+                        src={image!}
                         alt=""
                       />
                     </Menu.Button>
@@ -145,4 +148,62 @@ export function NavBar() {
       )}
     </Disclosure>
   );
+}
+
+function NavBarUnauthenticated() {
+  return (
+    <div className="bg-gray-800 ">
+            <div className="flex space-x-4">
+              <Image
+                className="" 
+                src="/favicon.ico"
+                width={32}
+                height={32}
+                alt="OCPP Monitoring"
+              />
+              <a className=''>OCPP Monitoring</a>
+            </div>
+    </div>
+  );
+}
+
+const isLoggedIn = (session: Session) => session && session.user;
+
+export function NavBar() {
+  const { data: session } = useSession();
+  // if (session) {
+  //   return NavBarLoggedIn(session);
+  // }
+  // return NavBarUnauthenticated();
+
+  const authorizedHtml = (isLoggedIn(session!)) ? (
+    <div>
+      <Nav.Link href="/dashboard">Dashboard</Nav.Link>
+    <Nav.Link href="/chargepoints">Map</Nav.Link>
+    <NavDropdown title={`Hi ${session!.user!.name}`} id="basic-nav-dropdown">
+      <NavDropdown.Item href="/me">Profile</NavDropdown.Item>
+      <NavDropdown.Divider />
+      <NavDropdown.Item onClick={() => signOut()}>
+        Sign Out
+      </NavDropdown.Item>
+    </NavDropdown>
+    </div>
+  ) : ( <div></div>)
+
+
+  return (
+    <Navbar bg="dark" data-bs-theme="dark" expand="lg" className="bg-body-tertiary">
+      <Container fluid>
+        <Navbar.Brand href="#home">OCPP Monitoring</Navbar.Brand>
+        <Navbar.Toggle aria-controls="basic-navbar-nav" />
+        <Navbar.Collapse id="basic-navbar-nav">
+          <Nav className="me-auto">
+            <Nav.Link href="/">Home</Nav.Link>
+           {authorizedHtml}
+          </Nav>
+        </Navbar.Collapse>
+      </Container>
+    </Navbar>
+  )
+  
 }

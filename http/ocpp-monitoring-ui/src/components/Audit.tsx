@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { AuditElement } from "./AuditElement";
 import { socketServiceInstance } from "@/service/SocketService";
+import { Container, Row } from 'react-bootstrap';
 
 export function Audit() {
   const [usersAuditInfo, setUsersAuditInfo] = useState<{time: string, name: string}[]>([])
@@ -20,6 +21,38 @@ export function Audit() {
       return oldValue.slice(0, 10)
     })
   })
+
+  return (
+    <Container>
+      <Row>
+        <h3>Audit Table</h3>
+      </Row>
+      <Row>
+      <div className="table-wrapper-scroll-y my-custom-scrollbar">
+
+  <table className="table table-bordered table-striped mb-0">
+    <thead className='thead-dark'>
+      <tr>
+        <th scope="col">Date</th>
+        <th scope="col">Username</th>
+        <th scope="col">Device</th>
+      </tr>
+    </thead>
+    <tbody>
+    {...usersAuditInfo.map((elem, index) => (
+          <tr key={elem.time}>
+            <th scope="row">{elem.time}</th>
+            <td><a href={`/user/${elem.name}`}>{elem.name}</a></td>
+            <td>Device</td>
+          </tr>
+        ))}
+    </tbody>
+  </table>
+
+</div>  
+      </Row>
+    </Container>
+  )
 
 
   return (

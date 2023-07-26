@@ -29,6 +29,7 @@ services:
 
   frontend:
     build: ./ocpp-monitoring-ui
+    command: yarn dev
     volumes:
       - './ocpp-monitoring-ui:/app'
       - './ocpp-monitoring-ui/node_modules:/app/node_modules'
