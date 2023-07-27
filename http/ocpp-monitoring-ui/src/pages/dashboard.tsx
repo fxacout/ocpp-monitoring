@@ -4,14 +4,16 @@ import HealthGraph from "../components/dashboard/SystemHealth";
 import UsageGraph from "../components/dashboard/UsageGraph";
 import { PageSkeleton } from "../components/PageSkeleton";
 import { Card, Col, Container, Row } from "react-bootstrap";
-import TotalHealth from '../components/dashboard/TotalHealth';
+import TotalHealth from "../components/dashboard/TotalHealth";
+import NodeGraph from '../components/NodeGraph';
 
 const Dashboard = () => {
   return (
     <PageSkeleton>
-      <Container className='container-sm' fluid>
+      <h1>Popular cada grafico con un endpoint del Back y llamarlo cada X segs</h1>
+      <Container className="container-sm" fluid>
         <Row>
-          <Card className='bg-dark border-info mb-3'>
+          <Card className="bg-dark border-info mb-3">
             <Card.Header className="text-white text-center">
               System health
             </Card.Header>
@@ -22,7 +24,7 @@ const Dashboard = () => {
         </Row>
         <Row>
           <Col>
-            <Card className='bg-dark border-info mb-3'>
+            <Card className="bg-dark border-info mb-3">
               <Card.Header className="text-white text-center">
                 Latency over time for each node
               </Card.Header>
@@ -32,7 +34,7 @@ const Dashboard = () => {
             </Card>
           </Col>
           <Col>
-            <Card className='bg-dark border-info mb-3'>
+            <Card className="bg-dark border-info mb-3">
               <Card.Header className="text-white text-center">
                 System health (number of nodes connected)
               </Card.Header>
@@ -44,14 +46,25 @@ const Dashboard = () => {
         </Row>
         <Row>
           <Col>
-          <Card className='bg-dark border-info mb-3'>
+            <Card className="bg-dark border-info mb-3">
               <Card.Header className="text-white text-center">
-              Usage of pages by user over time
+                Usage of pages by user over time
               </Card.Header>
               <Card.Body>
-              <UsageGraph />
+                <UsageGraph />
               </Card.Body>
-            </Card></Col>
+            </Card>
+          </Col>
+          <Col>
+            <Card className="bg-dark border-info mb-3">
+              <Card.Header className="text-white text-center">
+                Node Graph
+              </Card.Header>
+              <Card.Body>
+                <NodeGraph options={{autoResize: true}}/>
+              </Card.Body>
+            </Card>
+          </Col>
         </Row>
       </Container>
     </PageSkeleton>
