@@ -1,12 +1,10 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Edge, Network, Node, Options } from 'vis-network/peer';
 import { DataSet } from 'vis-data/peer';
-import { ChargePointConnected, ChargePointDisconnected, ChargePointLatency, UpdateAllNodes } from '../models/ChargePoint';
-import { AvailableProtocols, SocketListener } from '../models/SocketListener';
+import { socketServiceInstance } from '../service/SocketService';
 
 export interface GraphProps {
   options: Options;
-  socketListener: SocketListener;
 }
 
 interface GraphState {
@@ -15,13 +13,12 @@ interface GraphState {
   heartbeat: boolean;
 }
 
-const Graph: React.FC<GraphProps> = (props) => {
+const NodeGraph: React.FC<GraphProps> = (props) => {
   const [nodes, setNodes] = useState<DataSet<Node>>(new DataSet([{ id: 1, label: 'Central System', color: '#76B947' }]));
   const [edges, setEdges] = useState<DataSet<Edge>>(new DataSet());
   const [heartbeat, setHeartbeat] = useState<boolean>(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
-  const socketListener = useRef<SocketListener>(props.socketListener);
 
   const addChargePoint = (id: number, responseTime: number) => {
     setNodes((prevNodes) => {
@@ -29,7 +26,7 @@ const Graph: React.FC<GraphProps> = (props) => {
         return prevNodes;
       }
       prevNodes.add({ id, label: `Charge Point ${id}` });
-      setEdges((prevEdges) => prevEdges.add({ from: id, to: 1, label: responseTimeToString(responseTime) }));
+      setEdges((prevEdges) => {prevEdges.add({ from: id, to: 1, label: responseTimeToString(responseTime) }); return prevEdges});
       return prevNodes;
     });
   };
@@ -55,34 +52,23 @@ const Graph: React.FC<GraphProps> = (props) => {
   }, [nodes, edges, props.options]);
 
   useEffect(() => {
-    fetch('http://localhost:3001/getAllNodesId', {
-      method: 'get',
-    })
-      .then((response) => response.json())
-      .then((idsList: Array<number | string>) => {
-        idsList.forEach((nodeId) => addChargePoint(Number(nodeId), 0));
-      });
-
+    socketServiceInstance.getAllNodesId().then((idsList: Array<number | string>) => {
+      idsList.forEach((nodeId) => addChargePoint(Number(nodeId), 0));
+    });
     // Set listeners from WebSocket
-    socketListener.current.addHandler(AvailableProtocols.Connection, () => console.log('Connected!'));
 
-    socketListener.current.addHandler(AvailableProtocols.CpConnect, (chargePointConnected: ChargePointConnected) => {
-      addChargePoint(Number(chargePointConnected.id), Number(chargePointConnected.latency));
+    socketServiceInstance.addConnectHandler(({id, latency}) => {
+      addChargePoint(Number(id), Number(latency));
     });
 
-    socketListener.current.addHandler(AvailableProtocols.CpHeartbeat, (cpLatencyUpdate: ChargePointLatency) => {
+    socketServiceInstance.addHeartbeatHandler((cpLatencyUpdate) => {
       updateLatency(cpLatencyUpdate);
     });
 
-    socketListener.current.addHandler(AvailableProtocols.CpDisconnect, (chargePointDisconnected: ChargePointDisconnected) => {
+    socketServiceInstance.addDisconnectHandler((chargePointDisconnected) => {
       deleteChargePoint(Number(chargePointDisconnected.id));
     });
-
-    // Cleanup
-    return () => {
-      socketListener.current.removeAllHandlers();
-    };
-  }, []);
+  });
 
   const deleteChargePoint = (id: number) => {
     setNodes((prevNodes) => {
@@ -104,7 +90,7 @@ const Graph: React.FC<GraphProps> = (props) => {
     return `Latency: ${Math.trunc(responseTime * 10e5) / 100} ms`;
   };
 
-  const updateLatency = (chargePointLatency: ChargePointLatency) => {
+  const updateLatency = (chargePointLatency: {id: string; latency: string}) => {
     setEdges((prevEdges) => {
       prevEdges.forEach((edge) => {
         if (edge.from === Number(chargePointLatency.id)) {
@@ -123,7 +109,7 @@ const Graph: React.FC<GraphProps> = (props) => {
     });
   };
 
-  return <div ref={containerRef} style={{ height: '500px', width: '800px' }} />;
+  return <div ref={containerRef} style={{ height: '300px', width: '500px' }} />;
 };
 
-export default Graph;
+export default NodeGraph ;

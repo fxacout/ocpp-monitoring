@@ -17,7 +17,8 @@ const nextConfig = {
         hostname: '**',
       },
     ],
-  }
+  },
+  transpilePackages: ['vis-network', 'vis-data'],
 }
 
 module.exports = nextConfig
