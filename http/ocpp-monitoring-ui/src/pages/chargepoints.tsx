@@ -12,7 +12,7 @@ export default function Index() {
   const { data: session } = useSession();
   const router = useRouter();
   return (
-    <PageSkeleton>
+    <PageSkeleton authenticated={true}>
       <Container fluid>
         <Row>
         <Col>
@@ -22,9 +22,9 @@ export default function Index() {
           <Row>
             <NodeStatus></NodeStatus>
             </Row>
-            <Row>
+            {/* <Row>
             <Audit></Audit>
-            </Row>
+            </Row> */}
           
         </Col>
         </Row>

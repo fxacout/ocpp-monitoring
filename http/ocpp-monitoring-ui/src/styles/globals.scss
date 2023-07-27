@@ -36,12 +36,15 @@ a {
   background-color: $cyan;
   color: black;
 }
+
 :root {
   font-size: 100%;
+
   @include lg {
     font-size: 130%;
   }
 }
+
 section {
   display: flex;
   flex-direction: column;
@@ -83,7 +86,20 @@ section {
   position: relative;
   height: 200px;
   overflow: auto;
-  }
-  .table-wrapper-scroll-y {
+}
+
+.table-wrapper-scroll-y {
   display: block;
-  }
+}
+
+.profile-card {
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  padding: 10px;
+}
+
+.profile-picture {
+  width: 100%;
+  max-width: 150px;
+  border-radius: 50%;
+}

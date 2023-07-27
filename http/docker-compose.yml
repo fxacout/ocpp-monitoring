@@ -20,7 +20,9 @@ services:
     ports:
       - "3001:3000"
     depends_on:
-      - authentication_system
+      - user_service
+    volumes:
+      - ./backend:/code
   mongodb:
     image: mongo
     restart: always
@@ -53,11 +55,11 @@ services:
     depends_on:
       - monitoring_system
 
-  authentication_system:
-    build: ./authenticationSystem
+  user_service:
+    build: ./userService
     expose:
       - 3000
+    ports:
+      - "3002:3000"
     volumes:
-      - ./authenticationSystem:/app
-    environment:
-      - SIGNING_KEY=thismustbethebestkey
+      - ./userService:/code
