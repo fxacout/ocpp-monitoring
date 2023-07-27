@@ -1,8 +1,9 @@
-import NextAuth, { AuthOptions } from "next-auth"
+import NextAuth, { AuthOptions, getServerSession } from "next-auth"
 import GoogleProvider from "next-auth/providers/google"
 import CredentialsProvider from 'next-auth/providers/credentials'
 import { socketServiceInstance } from "@/service/SocketService"
 import axios from "axios"
+import { hash } from '../../../utils/hash'
 export const authOptions: AuthOptions = {
   // Configure one or more authentication providers
   providers: [
@@ -44,13 +45,15 @@ export const authOptions: AuthOptions = {
         */
        console.log(`Enable auth: ${process.env.ENABLE_AUTH}`)
        if (process.env.ENABLE_AUTH === 'true') {
-        const res = await axios.post('http://authentication_system:3000/verify', {
-          username: credentials?.username,
-          password: credentials?.password
-        })
+        const hashedPassword = hash(credentials?.password!)
+        const res = await axios.get(`http://user_service:3000/user/${credentials?.username}`)
         console.log(JSON.stringify(res))
         if (res.status !== 200) {
           console.log(`Error logging in: ${res.status}, ${res.data}`)
+          return null
+        }
+        if (res.data.password !== hashedPassword) {
+          console.log(`Incorrect password`)
           return null
         }
        }  
@@ -64,14 +67,25 @@ export const authOptions: AuthOptions = {
       }
     })
   ],
-  callbacks: {
-    async jwt({ token, user, trigger }) {
-      if (trigger === 'signIn' && user) {
-        await socketServiceInstance.emitUserLogin(user)
-      }
-      console.log('Emitted user login')
-      return token
+  events: {
+    async signIn({user, account}) {
+      await socketServiceInstance.emitUserLogin(user)
+        console.log('Emitted user login')
+        const res = await axios.post(`http://user_service:3000/user`, {
+          name: user.name,
+          email: user.email,
+          image: user.image,
+          password: 'Oauth',
+          provider: account?.provider
+        })
     },
+    async signOut({token}) {
+      if (token) {
+        const res = await socketServiceInstance.emitUserLogout({...token, id: '10', image: 'http://localhost:3000/user.png'})
+        console.dir(res.data)
+      }
+      console.log('Emitted user logout')
+    }
   }
 }
 export default NextAuth(authOptions)
