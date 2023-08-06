@@ -15,16 +15,13 @@ export default function Index() {
     <PageSkeleton authenticated={true}>
       <Container fluid>
         <Row>
-        <Col>
+        <Col className='col-md-10'>
           <CustomMap></CustomMap>
         </Col>
         <Col>
           <Row>
             <NodeStatus></NodeStatus>
             </Row>
-            {/* <Row>
-            <Audit></Audit>
-            </Row> */}
           
         </Col>
         </Row>

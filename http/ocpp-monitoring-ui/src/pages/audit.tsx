@@ -64,7 +64,7 @@ export default function Page() {
   }
 
   return (
-    <PageSkeleton>
+    <PageSkeleton adminRequired={true}>
       <div className="container">
       <table className="table table-bordered table-striped" ref={tableRef}>
         <thead>

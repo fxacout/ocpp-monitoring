@@ -6,7 +6,7 @@ import { signIn } from 'next-auth/react';
 export default function Hero() {
   return (
     <div className="px-4 py-5 my-5 text-center">
-    <Image className="d-block mx-auto mb-4" src="https://getbootstrap.com/docs/5.0/assets/brand/bootstrap-logo.svg" alt="" width="72" height="57"/>
+    <Image className="d-block mx-auto mb-4" src="/favicon.ico" alt="" width="72" height="72"/>
     <h1 className="display-5 fw-bold">OCPP Monitoring</h1>
     <div className="col-lg-6 mx-auto">
       <p className="lead mb-4">Enables the user to monitor any ChargePoint connected to the network in real-time. The user can view the status of the ChargePoint, it&apos;s location and the users that view them.</p>
