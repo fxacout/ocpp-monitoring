@@ -9,8 +9,8 @@ import NodeGraph from '../components/NodeGraph';
 
 const Dashboard = () => {
   return (
-    <PageSkeleton>
-      <h1>Popular cada grafico con un endpoint del Back y llamarlo cada X segs</h1>
+    <PageSkeleton authenticated={true}>
+      {/* <h1>Popular cada grafico con un endpoint del Back y llamarlo cada X segs</h1> */}
       <Container className="container-sm" fluid>
         <Row>
           <Card className="bg-dark border-info mb-3">

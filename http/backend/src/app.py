@@ -1,6 +1,8 @@
 from flask import Flask, jsonify, request, Response
+from random import randrange
 from flask_pymongo import PyMongo
 from datetime import datetime, date
+from time import time
 from flask_socketio import SocketIO
 from flask_cors import CORS
 from bson import json_util
@@ -14,43 +16,96 @@ app.config['MONGO_URI'] = 'mongodb://mongodb/monitoring-logs'
 
 mongo = PyMongo(app)
 
-currentIds = []
 
 
-@app.route('/chargePoint', methods=['POST'])
-def charge_point_connected():
+@app.route('/chargepoint/event/<operation>', methods=['POST'])
+def charge_point_connected(operation):
     # Receiving Data
     chargePointId = request.json['id']
-    currentIds.append(chargePointId)
+    print(chargePointId)
+    charge_point = mongo.db.chargePoints.find_one({'id': chargePointId})
+    if charge_point == None or charge_point['status'] != 'connected':
+        print('Charge Point is not connected')
+        return {
+            'status_code' : 201
+        }
     timestamp = request.json['timestamp']
     duration = request.json['duration']
     mongo.db.chargePointLogs.insert_one(
-    {'id': chargePointId, 'Type': 'CONNECTION', 'timestamp' : timestamp, 'duration': duration}
+    {'id': chargePointId, 'Type': operation, 'timestamp' : timestamp, 'duration': duration}
     )
-    socketio.emit('cp_connect', { 'id': chargePointId, 'latency': duration})
+    socketio.emit('chargepoint_event', { 'id': chargePointId, 'latency': duration, 'type': operation})
     return {
         'status_code' : 201
     }
+
+
+
+@app.route('/chargepoint/create', methods=['POST'])
+def create_charge_point(): 
+    chargePointId = request.json['id']
+    ip = request.json['ip']
+    lastPing = request.json['lastPing']
+    status = request.json['status']
+    centralSystem = request.json['centralSystem']
+    location = {'lat': 36.7150286 + (randrange(0, 10) * 0.01), 'lng': -4.4738605 +( randrange(0, 10) * 0.01)}
+    # Check if charge point is already in the database
+    chargepoint_count = mongo.db.chargePoints.count_documents({'id': chargePointId})
+    if chargepoint_count > 0:
+        return {
+            'status_code' : 200
+        }
+    mongo.db.chargePoints.insert_one(
+    {'id': chargePointId, 'ip': ip, 'lastPing' : lastPing, 'status': status , 'centralSystem': centralSystem, 'location': location}
+    )
+    return {
+        'status_code' : 201
+    }
+
+@app.route('/chargepoint', methods=['GET'])
+def get_all_charge_points():
+        
+    chargepoints = mongo.db.chargePoints.find().sort("_id",DESCENDING)
+    return Response(
+        json_util.dumps(chargepoints),
+        mimetype='application/json'
+    )
+
+@app.route('/chargepoint/<chargePointId>', methods=['PUT'])
+def change_chargepoint_status(chargePointId): 
+    status = request.json['status']
+    # Check if charge point is already in the database
+    chargepoint_count = mongo.db.chargePoints.count_documents({'id': chargePointId})
+    if chargepoint_count == 0:
+        return {
+            'status_code' : 200
+        }
+    mongo.db.chargePoints.update_one(
+    {'id': chargePointId }, { '$set': {'status': status}}
+    )
+
+@app.route('/chargepoint/<chargePointId>/ping', methods=['PUT'])
+def change_chargepoint_ping(chargePointId): 
+    lastPing = str(time())
+    # Check if charge point is already in the database
+    chargepoint_count = mongo.db.chargePoints.count_documents({'id': chargePointId})
+    if chargepoint_count == 0:
+        return {
+            'status_code' : 200
+        }
+    mongo.db.chargePoints.update_one(
+    {'id': chargePointId }, { '$set': {'lastPing': lastPing}}
+    )
+
+
+
 
 @app.route('/getAllNodesId', methods=['GET'])
 def get_all_nodes_id():
-    # Receiving Data
-    response = jsonify(currentIds)
-    response.status_code = 200
-    return response
-
-@app.route('/heartbeat', methods=['POST'])
-def charge_point_heartbeat():
-    chargePointId = request.json['id']
-    timestamp = request.json['timestamp']
-    duration = request.json['duration']
-    mongo.db.chargePointLogs.insert_one(
-    {'id': chargePointId, 'Type': 'HEARTBEAT', 'timestamp' : timestamp, 'duration': duration}
-    )
-    socketio.emit('cp_heartbeat', { 'id': chargePointId, 'latency': duration})
-    return {
-        'status_code' : 201
-    }
+    currentIds = []
+    for doc in mongo.db.chargePoints.find(projection = {'id': 1}):
+        currentIds.append(doc['id'])
+    return jsonify(currentIds)
 
 
 @app.route('/user/<operation>', methods=['POST'])
@@ -84,7 +139,6 @@ def user_log_all():
 def charge_point_disconnect():
     chargePointId = request.json['id']
     timestamp = request.json['timestamp']
-    currentIds.remove(chargePointId)
     socketio.emit('cp_disconnect', { 'id': chargePointId})
     id = mongo.db.chargePointLogs.insert_one(
     {'id': chargePointId, 'Type': 'DISCONNECT', 'timestamp' : timestamp})

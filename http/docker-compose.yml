@@ -24,7 +24,7 @@ services:
     volumes:
       - ./backend:/code
   mongodb:
-    image: mongo
+    image: mongo:4-focal
     restart: always
     ports:
       - "27017:27017"

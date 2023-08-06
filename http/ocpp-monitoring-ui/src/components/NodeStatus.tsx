@@ -2,7 +2,7 @@ import { Dispatch, SetStateAction, useState } from "react";
 import LatencySVG from "./LatencySVG";
 import type { NodeInfo } from "@/domain/NodeInfo";
 import { socketServiceInstance } from "@/service/SocketService";
-import { Col, Container, Row } from 'react-bootstrap';
+import { Card, Col, Container, Row } from 'react-bootstrap';
 
 
 export let nodeInfoHook: Dispatch<SetStateAction<NodeInfo | undefined>> | undefined;
@@ -23,6 +23,7 @@ export function NodeStatus() {
     if (nodeInfo){
       
     return (
+      <Card>
       <Container>
         {/* Tile 2 */}
         <Row>
@@ -46,6 +47,7 @@ export function NodeStatus() {
           </Col>
         </Row>
       </Container>
+      </Card>
     );
     } else {
       return (
