@@ -3,3 +3,4 @@ pymongo
 flask-pymongo
 flask_socketio
 flask-cors
+requests

@@ -6,7 +6,7 @@ import { NodeStatus } from "@/components/NodeStatus";
 import { useSession } from "next-auth/react";
 import { useRouter } from 'next/router';
 import { Col, Container, Row } from 'react-bootstrap';
-import { PageSkeleton } from '../components/PageSkeleton';
+import { PageSkeleton } from '../../components/PageSkeleton';
 
 export default function Index() {
   const { data: session } = useSession();
@@ -14,14 +14,12 @@ export default function Index() {
   return (
     <PageSkeleton authenticated={true}>
       <Container fluid>
-        <Row>
+        <Row className=''>
         <Col className='col-md-10'>
           <CustomMap></CustomMap>
         </Col>
         <Col>
-          <Row>
-            <NodeStatus></NodeStatus>
-            </Row>
+        <NodeStatus></NodeStatus>
           
         </Col>
         </Row>

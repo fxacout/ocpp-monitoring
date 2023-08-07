@@ -55,7 +55,7 @@ export const PageSkeleton = ({
     return (
       <div>
         <NavBar userName={userName!} isAdmin={isAdmin} image={image!}></NavBar>
-        <EventsNotifier></EventsNotifier>
+        {/* <EventsNotifier></EventsNotifier> */}
         <Container>
           <Card className="mx-auto">
             <Card.Header className="mx-auto">Unauthorized</Card.Header>
@@ -72,7 +72,7 @@ export const PageSkeleton = ({
     return (
       <div>
         <NavBar userName={userName!} isAdmin={isAdmin} image={image!}></NavBar>
-        <EventsNotifier></EventsNotifier>
+        {/* <EventsNotifier></EventsNotifier> */}
         <Container>
           <Card className="mx-auto">
             <Card.Header className="mx-auto">Unauthorized</Card.Header>
@@ -89,7 +89,7 @@ export const PageSkeleton = ({
   return (
     <div>
       <NavBar userName={userName!} isAdmin={isAdmin} image={image!}></NavBar>
-      <EventsNotifier></EventsNotifier>
+      {/* <EventsNotifier></EventsNotifier> */}
       {children}
       <Footer></Footer>
     </div>

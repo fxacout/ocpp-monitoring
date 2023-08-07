@@ -3,6 +3,8 @@ from random import randrange
 from flask_pymongo import PyMongo
 from datetime import datetime, date
 from time import time
+
+import requests
 from flask_socketio import SocketIO
 from flask_cors import CORS
 from bson import json_util
@@ -39,7 +41,12 @@ def charge_point_connected(operation):
         'status_code' : 201
     }
 
-
+def check_plugin_enabled(ip: str):
+    try:
+        request = requests.get("http://" + ip + ":3000/status")
+        return request.status_code == 200
+    except:
+        return False
 
 @app.route('/chargepoint/create', methods=['POST'])
 def create_charge_point(): 
@@ -48,6 +55,7 @@ def create_charge_point():
     lastPing = request.json['lastPing']
     status = request.json['status']
     centralSystem = request.json['centralSystem']
+    hasPlugin = check_plugin_enabled(ip)
     location = {'lat': 36.7150286 + (randrange(0, 10) * 0.01), 'lng': -4.4738605 +( randrange(0, 10) * 0.01)}
     # Check if charge point is already in the database
     chargepoint_count = mongo.db.chargePoints.count_documents({'id': chargePointId})
@@ -56,7 +64,7 @@ def create_charge_point():
             'status_code' : 200
         }
     mongo.db.chargePoints.insert_one(
-    {'id': chargePointId, 'ip': ip, 'lastPing' : lastPing, 'status': status , 'centralSystem': centralSystem, 'location': location}
+    {'id': chargePointId, 'ip': ip, 'lastPing' : lastPing, 'status': status , 'centralSystem': centralSystem, 'location': location, 'hasPlugin': hasPlugin}
     )
     return {
         'status_code' : 201
@@ -71,6 +79,42 @@ def get_all_charge_points():
         mimetype='application/json'
     )
 
+@app.route('/chargepoint/<chargepointId>', methods=['GET'])
+def get_charge_point(chargepointId):
+        
+    chargepoint = mongo.db.chargePoints.find_one({"id": chargepointId})
+    return Response(
+        json_util.dumps(chargepoint),
+        mimetype='application/json'
+    )
+
+@app.route('/chargepoint/<chargePointId>/toggle', methods=['PUT'])
+def toggle_chargepoint(chargePointId):
+    charge_point = mongo.db.chargePoints.find_one({'id': chargePointId})
+    if charge_point == None:
+        return {
+            'status_code' : 200
+        }
+    if charge_point['status'] == 'connected':
+        request = requests.delete("http://" + charge_point['ip'] + ":3000")
+        if request.status_code == 200:
+            print('Charge Point Disconnected')
+            mongo.db.chargePoints.update_one(
+            {'id': chargePointId }, { '$set': {'status': 'disconnected'}}
+            )
+            socketio.emit('cp_disconnect', { 'id': chargePointId})
+    else:
+        request = requests.post("http://" + charge_point['ip'] + ":3000")
+        if request.status_code == 200:
+            print('Charge Point Connected')
+            mongo.db.chargePoints.update_one(
+            {'id': chargePointId }, { '$set': {'status': 'connected'}}
+            )
+            socketio.emit('cp_connect', { 'id': chargePointId})
+    return {
+        'status_code' : 200
+    }
+
 @app.route('/chargepoint/<chargePointId>', methods=['PUT'])
 def change_chargepoint_status(chargePointId): 
     status = request.json['status']
@@ -83,6 +127,9 @@ def change_chargepoint_status(chargePointId):
     mongo.db.chargePoints.update_one(
     {'id': chargePointId }, { '$set': {'status': status}}
     )
+    return {
+        'status_code' : 200
+    }
 
 @app.route('/chargepoint/<chargePointId>/ping', methods=['PUT'])
 def change_chargepoint_ping(chargePointId): 
@@ -93,9 +140,18 @@ def change_chargepoint_ping(chargePointId):
         return {
             'status_code' : 200
         }
+    charge_point = mongo.db.chargePoints.find_one({'id': chargePointId})
+    if charge_point == None or charge_point['status'] != 'connected':
+        print('Charge Point is not connected')
+        return {
+            'status_code' : 201
+        }
     mongo.db.chargePoints.update_one(
     {'id': chargePointId }, { '$set': {'lastPing': lastPing}}
     )
+    return {
+        'status_code' : 200
+    }
 
 
 

@@ -13,7 +13,10 @@ export function NavBar({isAdmin, userName, image}: {isAdmin?: boolean, userName?
 
       <Nav className="mx-auto">
         <Nav.Link href="/dashboard">Dashboard</Nav.Link>
-        <Nav.Link href="/chargepoints">Map</Nav.Link>
+        <Nav.Link href="/chargepoints">ChargePoints</Nav.Link>
+        <Nav.Link href="/chargepoints/map">Map</Nav.Link>
+        <Nav.Link href="/chargepoints/graph">Graph</Nav.Link>
+
       </Nav>
       {isAdmin && <Nav className="mx-auto">
         <Nav.Link href="/user/all">Users</Nav.Link>
