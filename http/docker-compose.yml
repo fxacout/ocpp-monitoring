@@ -47,11 +47,17 @@ services:
   
   charge_point_1:
     build: ./chargePoint
+    expose:
+      - 3000
+    ports:
+      - "5001:3000"
     depends_on:
       - monitoring_system
 
   charge_point_2:
     build: ./chargePoint
+    expose:
+      - 3000
     depends_on:
       - monitoring_system
 

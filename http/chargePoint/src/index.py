@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import sys
 import websockets
 from random import randrange
 
@@ -36,9 +37,16 @@ class ChargePoint(cp):
 
 async def main(retries=0):
     MAX_RETRIES = 10
+    print("Starting charge point...")
+    argsId = None
+    try:
+        argsId = sys.argv[1]
+    except:
+        pass
+    chargePointId = argsId or randrange(1, 10000)
+    print("Charge Point ID: {}".format(chargePointId))
 
     while retries < MAX_RETRIES:
-        chargePointId = randrange(1, 10000)
         try:
             async with websockets.connect(
                 'ws://monitoring_system:9000/CP_{}'.format(chargePointId),
@@ -51,6 +59,7 @@ async def main(retries=0):
             print("Couldn't connect to central system.")
             retries += 1
             if retries < MAX_RETRIES:
+                await asyncio.sleep(5)
                 await main(retries)
             else:
                 print("Max retries reached. Exiting...")
