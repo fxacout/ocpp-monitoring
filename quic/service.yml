@@ -3,7 +3,7 @@ services:
   # Own service configuration, to be used in general docker-compose, services docker-compose and ci docker-compose
   frontend:
     environment:
-      NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: 'AIzaSyA7bdW6zL4XmNKp6_tiFTCvHNY60QXDvPY'
+      NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: 'empty'
       ENABLE_AUTH: 'false'
       GOOGLE_ACCOUNT_ID: 'empty'
       GOOGLE_CLIENT_SECRET: 'empty'

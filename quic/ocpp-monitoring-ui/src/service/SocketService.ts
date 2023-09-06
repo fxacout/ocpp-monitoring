@@ -27,7 +27,15 @@ class SocketService {
   }
 
   async emitUserLogin(user: DefaultUser) {
-    return axios.post(`${this.url}/user`, {id: user.id, image: user.image, name: user.name, email: user.email})
+    return axios.post(`${this.url}/user/login`, {id: user.id, image: user.image, name: user.name, email: user.email})
+  }
+
+  async emitUserAction(user: DefaultUser, action: string) {
+    return axios.post(`${this.url}/user/${action}`, {id: user.id, image: user.image, name: user.name, email: user.email, action})
+  }
+
+  async emitUserLogout(user: DefaultUser) {
+    return axios.post(`${this.url}/user/logout`, {id: user.id, image: user.image, name: user.name, email: user.email})
   }
 
   async getAllNodesId(): Promise<string[]> {

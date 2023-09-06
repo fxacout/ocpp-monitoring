@@ -3,7 +3,7 @@
 FROM python:3.8-slim-buster
 
 WORKDIR /app
-RUN apt-get update && apt-get install libssl-dev
+RUN apt-get update && apt-get install -y libssl-dev
 
 COPY src/certs/myCA.pem /usr/local/share/ca-certificates/foo.crt
 RUN chmod 644 /usr/local/share/ca-certificates/foo.crt && update-ca-certificates

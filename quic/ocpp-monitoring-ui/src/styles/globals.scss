@@ -1,0 +1,124 @@
+@use "mx-media" as *;
+@use "variables" as *;
+@import url("https://fonts.googleapis.com/css2?family=Raleway:wght@400;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap");
+@import url("https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css");
+
+@import '~bootstrap/scss/bootstrap';
+
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+body {
+  background-color: $mainBG;
+  font-family: "Open Sans", sans-serif;
+  color: white;
+}
+
+h1,
+h2,
+h3,
+h4,
+button,
+a {
+  font-family: "Raleway", sans-serif;
+}
+
+::selection {
+  background-color: $cyan;
+  color: black;
+}
+
+:root {
+  font-size: 100%;
+
+  @include lg {
+    font-size: 130%;
+  }
+}
+
+section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  text-align: center;
+  padding: 25px;
+  margin-bottom: 100px;
+}
+
+
+
+
+* {
+  box-sizing: border-box;
+}
+
+.places-container {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  width: 300px;
+}
+
+.map-container {
+  width: 100%;
+  height: 100vh;
+}
+
+.combobox-input {
+  width: 100%;
+  padding: 0.5rem;
+}
+
+
+.my-custom-scrollbar {
+  position: relative;
+  height: 200px;
+  overflow: auto;
+}
+
+.table-wrapper-scroll-y {
+  display: block;
+}
+
+.profile-card {
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  padding: 10px;
+}
+
+.profile-picture {
+  width: 100%;
+  max-width: 150px;
+  border-radius: 50%;
+}
+
+#mynetwork {
+  width: 800px;
+  height: 800px;
+  border: 1px solid lightgray;
+  background-color: #333333;
+}
+
+.logs-console {
+  margin-top: 10px;
+  background-color: #f7f7f7;
+  border: 1px solid #ddd;
+  padding: 10px;
+  height: 150px;
+  overflow-y: auto;
+  font-family: 'Courier New', monospace;
+}
