@@ -46,15 +46,15 @@ services:
       service: frontend
     depends_on:
     - monitoring_log
-
-  authentication_system:
-    build: ./authenticationSystem
+  
+  user_service:
+    build: ./userService
     expose:
       - 3000
+    ports:
+      - "3002:3000"
     volumes:
-      - ./authenticationSystem:/app
-    environment:
-      - SIGNING_KEY=thismustbethebestkey
+      - ./userService:/code
 
   mongodb:
     image: mongo
